@@ -20,19 +20,14 @@ const BUSINESS_LAYOUT = [
   { id: 'json-business-2',  row: 1, col: 4, label: 'JSON Business 2',  revenue: '800' },
 ];
 
-// Taille d'un bureau = espacement → bureaux collés
 const OFFICE_SIZE = 13;
 const OFFICE_SPACING_X = OFFICE_SIZE;
 const OFFICE_SPACING_Z = OFFICE_SIZE;
-
-// Grande salle de pause centrale (entre les 2 rangées)
 const PAUSE_ROOM_W = OFFICE_SIZE * 5;
-const PAUSE_ROOM_D = 10;
+const PAUSE_ROOM_D = 12;
 const PAUSE_ROOM_Z = OFFICE_SIZE + PAUSE_ROOM_D / 2;
-
 const WALL_HEIGHT = 3.2;
 const WALL_THICKNESS = 0.2;
-const WALL_MAT_COLOR = 0xe8e8e8;
 const DOOR_WIDTH = 2.2;
 const DOOR_HEIGHT = 2.6;
 
@@ -49,7 +44,7 @@ export class WorldManager {
 
   private get wallMat() {
     return new THREE.MeshStandardMaterial({
-      color: new THREE.Color(WALL_MAT_COLOR),
+      color: new THREE.Color(0xe8e8e8),
       roughness: 0.85,
       metalness: 0.0,
     });
@@ -64,10 +59,7 @@ export class WorldManager {
   }
 
   private addBox(cx: number, cy: number, cz: number, w: number, h: number, d: number, rotY = 0, mat?: THREE.Material): void {
-    const mesh = new THREE.Mesh(
-      new THREE.BoxGeometry(w, h, d),
-      mat || this.wallMat
-    );
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat || this.wallMat);
     mesh.position.set(cx, cy, cz);
     mesh.rotation.y = rotY;
     mesh.castShadow = true;
@@ -78,41 +70,29 @@ export class WorldManager {
 
   private addWallWithDoor(cx: number, cz: number, wallLen: number, rotY = 0): void {
     const side = (wallLen - DOOR_WIDTH) / 2;
-    const hH = WALL_HEIGHT / 2;
     const aboveH = WALL_HEIGHT - DOOR_HEIGHT;
     const ft = 0.12;
 
-    const localToWorld = (lx: number, lz: number) => ({
+    const lw = (lx: number, lz: number) => ({
       x: cx + Math.cos(rotY) * lx - Math.sin(rotY) * lz,
       z: cz + Math.sin(rotY) * lx + Math.cos(rotY) * lz,
     });
 
-    // Segment gauche
     if (side > 0.05) {
-      const p = localToWorld(-(DOOR_WIDTH / 2 + side / 2), 0);
-      this.addBox(p.x, hH, p.z, side, WALL_HEIGHT, WALL_THICKNESS, rotY);
+      const l = lw(-(DOOR_WIDTH / 2 + side / 2), 0);
+      this.addBox(l.x, WALL_HEIGHT / 2, l.z, side, WALL_HEIGHT, WALL_THICKNESS, rotY);
+      const r = lw(DOOR_WIDTH / 2 + side / 2, 0);
+      this.addBox(r.x, WALL_HEIGHT / 2, r.z, side, WALL_HEIGHT, WALL_THICKNESS, rotY);
     }
 
-    // Segment droit
-    if (side > 0.05) {
-      const p = localToWorld(DOOR_WIDTH / 2 + side / 2, 0);
-      this.addBox(p.x, hH, p.z, side, WALL_HEIGHT, WALL_THICKNESS, rotY);
-    }
-
-    // Dessus porte
     if (aboveH > 0.05) {
       this.addBox(cx, DOOR_HEIGHT + aboveH / 2, cz, wallLen, aboveH, WALL_THICKNESS, rotY);
     }
 
-    // Encadrement — montant gauche
-    const pl = localToWorld(-DOOR_WIDTH / 2, 0);
+    const pl = lw(-DOOR_WIDTH / 2, 0);
     this.addBox(pl.x, DOOR_HEIGHT / 2, pl.z, ft, DOOR_HEIGHT, WALL_THICKNESS + 0.05, rotY, this.frameMat);
-
-    // Montant droit
-    const pr = localToWorld(DOOR_WIDTH / 2, 0);
+    const pr = lw(DOOR_WIDTH / 2, 0);
     this.addBox(pr.x, DOOR_HEIGHT / 2, pr.z, ft, DOOR_HEIGHT, WALL_THICKNESS + 0.05, rotY, this.frameMat);
-
-    // Linteau
     this.addBox(cx, DOOR_HEIGHT + ft / 2, cz, DOOR_WIDTH + ft * 2, ft, WALL_THICKNESS + 0.05, rotY, this.frameMat);
   }
 
@@ -122,118 +102,133 @@ export class WorldManager {
 
   private buildOfficeWalls(): void {
     const half = OFFICE_SIZE / 2;
-
     for (const biz of BUSINESS_LAYOUT) {
       const cx = biz.col * OFFICE_SPACING_X - (OFFICE_SPACING_X * 2);
       const cz = biz.row * OFFICE_SPACING_Z;
 
-      // NORD
       const hasN = BUSINESS_LAYOUT.some(b => b.col === biz.col && b.row === biz.row - 1);
-      if (hasN) {
-        this.addWallWithDoor(cx, cz - half, OFFICE_SIZE, 0);
-      } else {
-        this.addSolidWall(cx, cz - half, OFFICE_SIZE, 0);
-      }
+      hasN ? this.addWallWithDoor(cx, cz - half, OFFICE_SIZE, 0) : this.addSolidWall(cx, cz - half, OFFICE_SIZE, 0);
 
-      // SUD — mur entre bureaux et salle de pause ou extérieur
       const hasS = BUSINESS_LAYOUT.some(b => b.col === biz.col && b.row === biz.row + 1);
-      if (hasS) {
-        this.addWallWithDoor(cx, cz + half, OFFICE_SIZE, 0);
-      } else {
-        // Porte vers salle de pause pour rangée du bas (row=1)
-        if (biz.row === 1) {
-          this.addWallWithDoor(cx, cz + half, OFFICE_SIZE, 0);
-        } else {
-          // Porte vers salle de pause pour rangée du haut (row=0)
-          this.addWallWithDoor(cx, cz + half, OFFICE_SIZE, 0);
-        }
-      }
+      hasS ? this.addWallWithDoor(cx, cz + half, OFFICE_SIZE, 0) : this.addWallWithDoor(cx, cz + half, OFFICE_SIZE, 0);
 
-      // OUEST
       const hasW = BUSINESS_LAYOUT.some(b => b.row === biz.row && b.col === biz.col - 1);
-      if (hasW) {
-        this.addWallWithDoor(cx - half, cz, OFFICE_SIZE, Math.PI / 2);
-      } else {
-        this.addSolidWall(cx - half, cz, OFFICE_SIZE, Math.PI / 2);
-      }
+      hasW ? this.addWallWithDoor(cx - half, cz, OFFICE_SIZE, Math.PI / 2) : this.addSolidWall(cx - half, cz, OFFICE_SIZE, Math.PI / 2);
 
-      // EST
       const hasE = BUSINESS_LAYOUT.some(b => b.row === biz.row && b.col === biz.col + 1);
-      if (hasE) {
-        this.addWallWithDoor(cx + half, cz, OFFICE_SIZE, Math.PI / 2);
-      } else {
-        this.addSolidWall(cx + half, cz, OFFICE_SIZE, Math.PI / 2);
-      }
+      hasE ? this.addWallWithDoor(cx + half, cz, OFFICE_SIZE, Math.PI / 2) : this.addSolidWall(cx + half, cz, OFFICE_SIZE, Math.PI / 2);
     }
   }
 
   private buildPauseRoom(): void {
-    const totalW = OFFICE_SIZE * 5;
-    const cx = (OFFICE_SIZE * 2) - (OFFICE_SIZE * 2); // centré
+    const cx = OFFICE_SIZE; // centre des 5 colonnes
     const cz = PAUSE_ROOM_Z;
-    const half = PAUSE_ROOM_D / 2;
-    const halfW = totalW / 2;
+    const halfW = PAUSE_ROOM_W / 2;
+    const halfD = PAUSE_ROOM_D / 2;
 
-    // Mur nord salle de pause (déjà fait par les bureaux row=0 côté sud)
-    // Mur sud salle de pause
-    this.addSolidWall(cx, cz + half, totalW, 0);
+    // Murs extérieurs salle de pause
+    this.addSolidWall(cx, cz + halfD, PAUSE_ROOM_W, 0); // sud
+    this.addSolidWall(cx - halfW, cz, PAUSE_ROOM_D, Math.PI / 2); // ouest
+    this.addSolidWall(cx + halfW, cz, PAUSE_ROOM_D, Math.PI / 2); // est
 
-    // Mur ouest
-    this.addSolidWall(cx - halfW, cz, WALL_THICKNESS, PAUSE_ROOM_D, Math.PI / 2);
-
-    // Mur est
-    this.addSolidWall(cx + halfW, cz, WALL_THICKNESS, PAUSE_ROOM_D, Math.PI / 2);
-
-    // Sol de la salle de pause (légèrement différent)
-    const floorGeo = new THREE.PlaneGeometry(totalW, PAUSE_ROOM_D);
-    const floorMat = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(0xf5f5f5),
-      roughness: 0.9,
-    });
-    const floor = new THREE.Mesh(floorGeo, floorMat);
+    // Sol salle de pause
+    const floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(PAUSE_ROOM_W, PAUSE_ROOM_D),
+      new THREE.MeshStandardMaterial({ color: new THREE.Color(0xf5f5f0), roughness: 0.9 })
+    );
     floor.rotation.x = -Math.PI / 2;
     floor.position.set(cx, 0.01, cz);
     floor.receiveShadow = true;
     this.scene.add(floor);
 
-    // Label salle de pause
-    const label = this.createLabel('🛋️ Salle de Pause', 'QG Central', '#64748b');
-    label.position.set(cx, 4, cz);
+    // MOBILIER salle de pause
+
+    // Canapé (3 blocs)
+    const couchMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(0x8b9dc3), roughness: 0.8 });
+    // Assise
+    this.addBox(cx, 0.4, cz + 3, 5, 0.5, 1.5, 0, couchMat);
+    // Dossier
+    this.addBox(cx, 0.9, cz + 3.6, 5, 0.8, 0.3, 0, couchMat);
+    // Accoudoir gauche
+    this.addBox(cx - 2.7, 0.7, cz + 3, 0.3, 0.6, 1.5, 0, couchMat);
+    // Accoudoir droit
+    this.addBox(cx + 2.7, 0.7, cz + 3, 0.3, 0.6, 1.5, 0, couchMat);
+
+    // Table basse
+    const tableMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(0xd4b896), roughness: 0.6, metalness: 0.1 });
+    this.addBox(cx, 0.3, cz + 1.2, 2.5, 0.1, 1.2, 0, tableMat);
+    // Pieds table
+    this.addBox(cx - 1, 0.15, cz + 0.7, 0.1, 0.3, 0.1, 0, tableMat);
+    this.addBox(cx + 1, 0.15, cz + 0.7, 0.1, 0.3, 0.1, 0, tableMat);
+    this.addBox(cx - 1, 0.15, cz + 1.7, 0.1, 0.3, 0.1, 0, tableMat);
+    this.addBox(cx + 1, 0.15, cz + 1.7, 0.1, 0.3, 0.1, 0, tableMat);
+
+    // Plante décorative
+    const potMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(0xc47c3e), roughness: 0.9 });
+    const leafMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(0x4a7c4e), roughness: 0.8 });
+    this.addBox(cx + 4, 0.3, cz - 3, 0.5, 0.6, 0.5, 0, potMat);
+    this.addBox(cx + 4, 0.9, cz - 3, 0.9, 0.8, 0.9, 0, leafMat);
+    // Deuxième plante
+    this.addBox(cx - 4, 0.3, cz - 3, 0.5, 0.6, 0.5, 0, potMat);
+    this.addBox(cx - 4, 0.9, cz - 3, 0.9, 0.8, 0.9, 0, leafMat);
+
+    // Table à manger ronde (simulée en carré)
+    const diningMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(0xf0ede8), roughness: 0.7 });
+    const chairMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(0x6b7280), roughness: 0.8 });
+    this.addBox(cx, 0.75, cz - 2.5, 2.5, 0.1, 2.5, 0, diningMat);
+    // Chaises autour de la table
+    this.addBox(cx - 1.8, 0.4, cz - 2.5, 0.8, 0.5, 0.8, 0, chairMat);
+    this.addBox(cx + 1.8, 0.4, cz - 2.5, 0.8, 0.5, 0.8, 0, chairMat);
+    this.addBox(cx, 0.4, cz - 4, 0.8, 0.5, 0.8, 0, chairMat);
+    this.addBox(cx, 0.4, cz - 1, 0.8, 0.5, 0.8, 0, chairMat);
+
+    // Label discret salle de pause
+    const label = this.createDiscreetLabel('Salle de Pause');
+    label.position.set(cx, 3.5, cz);
     this.scene.add(label);
     this.labels.push(label);
   }
 
-  private createLabel(text: string, revenue: string, color: string): THREE.Sprite {
+  private createDiscreetLabel(text: string): THREE.Sprite {
     const canvas = document.createElement('canvas');
-    canvas.width = 384;
-    canvas.height = 96;
+    canvas.width = 256;
+    canvas.height = 48;
     const ctx = canvas.getContext('2d')!;
-
-    // Fond
-    ctx.fillStyle = 'rgba(10,10,20,0.82)';
-    ctx.roundRect(2, 2, 380, 92, 14);
-    ctx.fill();
-
-    // Bande couleur
-    ctx.fillStyle = color;
-    ctx.roundRect(2, 2, 380, 28, [14, 14, 0, 0]);
-    ctx.fill();
-
-    // Nom
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 26px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText(text, 192, 40);
-
-    // Revenu — petite police
-    ctx.fillStyle = color;
+    ctx.fillStyle = 'rgba(0,0,0,0)';
+    ctx.clearRect(0, 0, 256, 48);
+    ctx.fillStyle = 'rgba(50,50,50,0.55)';
     ctx.font = '18px Arial';
-    ctx.fillText('🎯 ' + revenue + '/mois', 192, 72);
+    ctx.textAlign = 'center';
+    ctx.fillText(text, 128, 28);
+    const tex = new THREE.CanvasTexture(canvas);
+    const mat = new THREE.SpriteMaterial({ map: tex, transparent: true });
+    const sprite = new THREE.Sprite(mat);
+    sprite.scale.set(4, 0.8, 1);
+    return sprite;
+  }
+
+  private createOfficeLabel(text: string, revenue: string): THREE.Sprite {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 56;
+    const ctx = canvas.getContext('2d')!;
+    ctx.clearRect(0, 0, 256, 56);
+
+    // Nom discret
+    ctx.fillStyle = 'rgba(40,40,40,0.7)';
+    ctx.font = 'bold 20px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(text, 128, 22);
+
+    // Revenu très discret
+    ctx.fillStyle = 'rgba(80,80,80,0.5)';
+    ctx.font = '14px Arial';
+    ctx.fillText(revenue + '/mois', 128, 44);
 
     const tex = new THREE.CanvasTexture(canvas);
     const mat = new THREE.SpriteMaterial({ map: tex, transparent: true });
     const sprite = new THREE.Sprite(mat);
-    sprite.scale.set(5.5, 1.4, 1);
+    sprite.scale.set(4, 0.9, 1);
     return sprite;
   }
 
@@ -251,31 +246,26 @@ export class WorldManager {
     for (const biz of BUSINESS_LAYOUT) {
       const agentSet = AGENTIC_SETS.find(s => s.id === biz.id);
       const color = agentSet ? agentSet.color : activeSet.color;
-      const themeColor = new THREE.Color(color);
 
       const officeClone = officeGltf.scene.clone(true);
-
       const offsetX = biz.col * OFFICE_SPACING_X - (OFFICE_SPACING_X * 2);
       const offsetZ = biz.row * OFFICE_SPACING_Z;
-
       officeClone.position.set(offsetX, 0, offsetZ);
 
       officeClone.traverse((child: any) => {
         if (child.isMesh) {
           const mesh = child as THREE.Mesh;
           const name = mesh.name.toLowerCase();
-
           if (name.includes('navmesh')) {
             mesh.visible = false;
           } else {
             mesh.receiveShadow = true;
             mesh.castShadow = true;
-
             if (mesh.material) {
               const oldMat = mesh.material as THREE.MeshStandardMaterial;
-              const isColored = name.startsWith('colored');
+              // Pas de couleur par business — tout blanc/gris neutre
               mesh.material = new (THREE as any).MeshStandardNodeMaterial({
-                color: isColored ? themeColor : oldMat.color,
+                color: oldMat.color,
                 map: oldMat.map,
                 roughness: 1,
                 metalness: 0.35,
@@ -288,8 +278,9 @@ export class WorldManager {
       this.scene.add(officeClone);
       this.offices.push(officeClone);
 
-      const label = this.createLabel(biz.label, biz.revenue, color);
-      label.position.set(offsetX, 4.5, offsetZ);
+      // Label discret
+      const label = this.createOfficeLabel(biz.label, biz.revenue);
+      label.position.set(offsetX, 4, offsetZ);
       this.scene.add(label);
       this.labels.push(label);
 
@@ -306,22 +297,11 @@ export class WorldManager {
     });
   }
 
-  public updateThemeColor(color: string): void {
-    const { selectedAgentSetId } = useTeamStore.getState();
-    const idx = BUSINESS_LAYOUT.findIndex(b => b.id === selectedAgentSetId);
-    if (idx < 0 || !this.offices[idx]) return;
-
-    const themeColor = new THREE.Color(color);
-    this.offices[idx].traverse((child: any) => {
-      if (child.isMesh && child.name.toLowerCase().startsWith('colored')) {
-        if ((child.material as any).color) {
-          (child.material as any).color.copy(themeColor);
-        }
-      }
-    });
+  public updateThemeColor(_color: string): void {
+    // Pas de couleur par bureau — neutre
   }
 
   public getOffice(): THREE.Group | null {
     return this.offices[0] || null;
   }
-}
+                                                 }
