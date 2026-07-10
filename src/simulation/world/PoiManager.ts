@@ -1,113 +1,148 @@
-import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as THREE from 'three/webgpu';
-import { getAgentSet, AGENTIC_SETS } from '../../data/agents';
-import { useTeamStore } from '../../integration/store/teamStore';
-import { DRACO_LIB_PATH } from '../constants';
-import { NavMeshManager } from '../pathfinding/NavMeshManager';
-import { PoiManager } from './PoiManager';
+import { CharacterStateKey, PoiDef } from '../../types';
 
-const BUSINESS_LAYOUT = [
-  { id: 'vinted-ia',       row: 0, col: 0 },
-  { id: 'vente-site-web',  row: 0, col: 1 },
-  { id: 'pub-marques',     row: 0, col: 2 },
-  { id: 'formations-ia',   row: 0, col: 3 },
-  { id: 'miniatures-video',row: 0, col: 4 },
-  { id: 'montage-ia',      row: 1, col: 0 },
-  { id: 'bot-trading',     row: 1, col: 1 },
-  { id: 'agent-finance',   row: 1, col: 2 },
-  { id: 'json-business-1', row: 1, col: 3 },
-  { id: 'json-business-2', row: 1, col: 4 },
-];
+export class PoiManager {
+  private pois = new Map<string, PoiDef>();
 
-const OFFICE_SPACING_X = 28;
-const OFFICE_SPACING_Z = 28;
+  public addPoi(def: PoiDef): void {
+    this.pois.set(def.id, { ...def });
+  }
 
-export class WorldManager {
-  private offices: THREE.Group[] = [];
+  public removePoi(id: string): void {
+    this.pois.delete(id);
+  }
 
-  constructor(
-    private scene: THREE.Scene,
-    private navMesh: NavMeshManager,
-    private poiManager: PoiManager
-  ) {}
+  public occupy(id: string, agentIndex: number): void {
+    const poi = this.pois.get(id);
+    if (poi) poi.occupiedBy = agentIndex;
+  }
 
-  public async load(): Promise<void> {
-    const loader = new GLTFLoader();
-    const dracoLoader = new DRACOLoader();
-    dracoLoader.setDecoderPath(DRACO_LIB_PATH);
-    loader.setDRACOLoader(dracoLoader);
+  public release(id: string): void {
+    const poi = this.pois.get(id);
+    if (poi) poi.occupiedBy = null;
+  }
 
-    const officeGltf = await loader.loadAsync(`${import.meta.env.BASE_URL}models/office.glb`);
-
-    const { selectedAgentSetId, customSystems } = useTeamStore.getState();
-    const activeSet = getAgentSet(selectedAgentSetId, customSystems);
-
-    for (const biz of BUSINESS_LAYOUT) {
-      const agentSet = AGENTIC_SETS.find(s => s.id === biz.id);
-      const color = agentSet ? agentSet.color : activeSet.color;
-      const themeColor = new THREE.Color(color);
-
-      const officeClone = THREE.SkeletonUtils
-        ? (THREE.SkeletonUtils as any).clone(officeGltf.scene)
-        : officeGltf.scene.clone(true);
-
-      const offsetX = biz.col * OFFICE_SPACING_X - (OFFICE_SPACING_X * 2);
-      const offsetZ = biz.row * OFFICE_SPACING_Z;
-
-      officeClone.position.set(offsetX, 0, offsetZ);
-
-      officeClone.traverse((child: any) => {
-        if (child.isMesh) {
-          const mesh = child as THREE.Mesh;
-          const name = mesh.name.toLowerCase();
-
-          if (name.includes('navmesh')) {
-            this.navMesh.loadFromGeometry(mesh.geometry, officeClone.position);
-            mesh.visible = false;
-          } else {
-            mesh.receiveShadow = true;
-            mesh.castShadow = true;
-
-            if (mesh.material) {
-              const oldMat = mesh.material as THREE.MeshStandardMaterial;
-              const isColored = name.startsWith('colored');
-              mesh.material = new (THREE as any).MeshStandardNodeMaterial({
-                color: isColored ? themeColor : oldMat.color,
-                map: oldMat.map,
-                roughness: 1,
-                metalness: 0.35,
-              });
-            }
-          }
-        }
-      });
-
-      this.scene.add(officeClone);
-      this.offices.push(officeClone);
-
-      // Ajouter les POIs de ce bureau avec offset
-      this.poiManager.loadFromGlbWithOffset(officeClone, offsetX, offsetZ, biz.id);
+  public releaseAll(agentIndex: number): void {
+    for (const poi of this.pois.values()) {
+      if (poi.occupiedBy === agentIndex) poi.occupiedBy = null;
     }
   }
 
-  public updateThemeColor(color: string): void {
-    // Met à jour seulement le bureau actif
-    const { selectedAgentSetId, customSystems } = useTeamStore.getState();
-    const idx = BUSINESS_LAYOUT.findIndex(b => b.id === selectedAgentSetId);
-    if (idx < 0 || !this.offices[idx]) return;
+  public getPoi(id: string): PoiDef | undefined {
+    return this.pois.get(id);
+  }
 
-    const themeColor = new THREE.Color(color);
-    this.offices[idx].traverse((child: any) => {
-      if (child.isMesh && child.name.toLowerCase().startsWith('colored')) {
-        if ((child.material as any).color) {
-          (child.material as any).color.copy(themeColor);
+  public getFreePois(arrivalState: CharacterStateKey, agentIndex?: number): PoiDef[] {
+    return Array.from(this.pois.values()).filter(
+      p => p.arrivalState === arrivalState && (p.occupiedBy === null || p.occupiedBy === agentIndex)
+    );
+  }
+
+  public getFreePoisByPrefix(prefix: string, agentIndex?: number): PoiDef[] {
+    return Array.from(this.pois.values()).filter(
+      p => p.id.includes(prefix) && (p.occupiedBy === null || p.occupiedBy === agentIndex)
+    );
+  }
+
+  public getRandomFreePoi(prefix?: string): PoiDef | null {
+    const candidates = prefix
+      ? this.getFreePoisByPrefix(prefix)
+      : Array.from(this.pois.values()).filter(p => p.occupiedBy === null);
+
+    if (candidates.length === 0) return null;
+    return candidates[Math.floor(Math.random() * candidates.length)];
+  }
+
+  public getNearestFreePoi(
+    arrivalState: CharacterStateKey,
+    from: THREE.Vector3,
+  ): PoiDef | null {
+    const candidates = this.getFreePois(arrivalState);
+    if (candidates.length === 0) return null;
+
+    let nearest: PoiDef | null = null;
+    let nearestDist2 = Infinity;
+
+    for (const poi of candidates) {
+      const dx = poi.position.x - from.x;
+      const dz = poi.position.z - from.z;
+      const d2 = dx * dx + dz * dz;
+      if (d2 < nearestDist2) {
+        nearestDist2 = d2;
+        nearest = poi;
+      }
+    }
+    return nearest;
+  }
+
+  public loadFromGlb(scene: THREE.Object3D): void {
+    scene.traverse((child) => {
+      const match = child.name.match(/^poi-([a-z0-9_]+)-(.+)$/);
+      if (!match) return;
+
+      const type = match[1];
+      const uniqueId = match[2];
+
+      let arrivalState: CharacterStateKey = 'idle';
+      let label: string | undefined = undefined;
+
+      if (type !== 'spawn' && type !== 'area') {
+        arrivalState = type as CharacterStateKey;
+        if (arrivalState === 'sit_idle') {
+          label = 'Sit down';
         }
       }
+
+      const id = `${type}-${uniqueId}`;
+
+      const worldPos = new THREE.Vector3();
+      const worldQuat = new THREE.Quaternion();
+      child.getWorldPosition(worldPos);
+      child.getWorldQuaternion(worldQuat);
+
+      this.addPoi({ id, position: worldPos, quaternion: worldQuat, arrivalState, occupiedBy: null, label });
     });
   }
 
-  public getOffice(): THREE.Group | null {
-    return this.offices[0] || null;
-  }
+  public loadFromGlbWithOffset(scene: THREE.Object3D, offsetX: number, offsetZ: number, businessId: string): void {
+    scene.traverse((child) => {
+      const match = child.name.match(/^poi-([a-z0-9_]+)-(.+)$/);
+      if (!match) return;
+
+      const type = match[1];
+      const uniqueId = match[2];
+
+      let arrivalState: CharacterStateKey = 'idle';
+      let label: string | undefined = undefined;
+
+      if (type !== 'spawn' && type !== 'area') {
+        arrivalState = type as CharacterStateKey;
+        if (arrivalState === 'sit_idle') {
+          label = 'Sit down';
+        }
       }
+
+      const id = `${businessId}-${type}-${uniqueId}`;
+
+      const worldPos = new THREE.Vector3();
+      const worldQuat = new THREE.Quaternion();
+      child.getWorldPosition(worldPos);
+      child.getWorldQuaternion(worldQuat);
+
+      worldPos.x += offsetX;
+      worldPos.z += offsetZ;
+
+      this.addPoi({ id, position: worldPos, quaternion: worldQuat, arrivalState, occupiedBy: null, label });
+    });
+  }
+
+  public getAllPois(): PoiDef[] {
+    return Array.from(this.pois.values());
+  }
+
+  public getPoisByPrefix(prefix: string): PoiDef[] {
+    return Array.from(this.pois.values())
+      .filter(p => p.id.includes(prefix))
+      .sort((a, b) => a.id.localeCompare(b.id));
+  }
+}
