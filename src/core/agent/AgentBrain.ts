@@ -1,5 +1,5 @@
 import { LLMMessage } from '../llm/types';
-import { GeminiProvider } from '../llm/providers/GeminiProvider';
+import { OpenRouterProvider } from '../llm/providers/OpenRouterProvider';
 import { useUiStore } from '../../integration/store/uiStore';
 import { useCoreStore } from '../../integration/store/coreStore';
 import { useTeamStore } from '../../integration/store/teamStore';
@@ -38,8 +38,8 @@ export class AgentBrain {
       this.refreshFromStore();
       const core = useCoreStore.getState();
       const llmConfig = useUiStore.getState().llmConfig;
-      if (!llmConfig.apiKey) throw new Error('Gemini API key is required');
-      const provider = new GeminiProvider(llmConfig.apiKey);
+      if (!llmConfig.apiKey) throw new Error('OpenRouter API key is required');
+      const provider = new OpenRouterProvider(llmConfig.apiKey);
       const model = this.host.data.model || llmConfig.model;
       const teamId = useTeamStore.getState().selectedAgentSetId;
       const activeTeam = useTeamStore.getState().customSystems.find(s => s.id === teamId)
@@ -47,7 +47,6 @@ export class AgentBrain {
 
       const hasVisionSupport = activeTeam?.outputType === 'image' || activeTeam?.outputType === 'video';
 
-      // 1. Manage Message History
       if (!options.isChat) {
         const userMsg: LLMMessage = {
           role: 'user',
@@ -55,7 +54,6 @@ export class AgentBrain {
           metadata: options.silent ? { internal: true } : undefined
         };
         
-        // Attach reference images if VISION is supported for this project type
         if (hasVisionSupport && core.referenceImages.length > 0) {
           userMsg.images = core.referenceImages;
         }
@@ -64,10 +62,8 @@ export class AgentBrain {
         this.syncToStore();
       }
 
-      // 2. Prepare context
       let messages: LLMMessage[] = this.history.slice(-10);
 
-      // In chat mode, ensure the latest user message also carries images if it's the brief phase
       if (options.isChat && hasVisionSupport && core.referenceImages.length > 0) {
         messages = messages.map((m, idx) => {
           if (idx === messages.length - 1 && m.role === 'user') {
@@ -76,11 +72,11 @@ export class AgentBrain {
           return m;
         });
       }
+
       const allAgents = this.host.simulation.getAllAgents();
       const systemPrompt = PromptBuilder.buildSystemPrompt(this.host.data, core.phase, core.userBrief, allAgents);
       const toolDefs = options.tools || ToolRegistry.getDefinitions(this.host.data.index, core.phase, this.host.data.subagents?.length || 0);
 
-      // 3. Log and Execute LLM Call
       core.addRequestLog({
         agentIndex: this.host.data.index,
         agentName: this.host.data.name,
@@ -97,7 +93,6 @@ export class AgentBrain {
         model
       );
 
-      // 4. Log Response
       core.addResponseLog({
         agentIndex: this.host.data.index,
         agentName: this.host.data.name,
@@ -108,7 +103,6 @@ export class AgentBrain {
         taskId: this.host.getCurrentTaskId() || undefined
       });
 
-      // 5. Parse Tool Calls
       const text = response.content || '';
       const toolCalls = response.tool_calls?.map(tc => {
         try {
@@ -119,7 +113,6 @@ export class AgentBrain {
         }
       }).filter(Boolean) as any[] || [];
 
-      // 6. Final Message Construction
       const isInternalTrigger = options.silent;
       const hasToolCallsOnly = !text && toolCalls.length > 0;
       const isBrief = toolCalls.some(tc => tc.name === 'set_user_brief');
@@ -138,7 +131,6 @@ export class AgentBrain {
         finalContent = '...';
       }
 
-      // UI/UX handling for chat auto-closing
       if (options.isChat && (isBrief || isResolution)) {
         setTimeout(() => {
           if (useUiStore.getState().isChatting) useUiStore.getState().setChatting(false);
@@ -155,7 +147,6 @@ export class AgentBrain {
       });
       this.syncToStore();
 
-      // 7. Process Actions (Tools)
       for (const tc of toolCalls) {
         const handled = ToolRegistry.process(this.host as any, tc);
         if (tc.name === 'deliver_project' && handled) {
@@ -175,17 +166,14 @@ export class AgentBrain {
     }
   }
 
-  /** Autonomous Intent: Start the project strategy. */
   public async spark() {
     return this.think('Start the project by proposing initial tasks.', { silent: true });
   }
 
-  /** Autonomous Intent: Work on a specific task. */
   public async executeTask(taskId: string) {
     return this.think(`Proceed with task: ${taskId}`, { silent: true });
   }
 
-  /** Autonomous Intent: Finalize and deliver the project results. */
   public async concludeProject() {
     return this.think('All tasks are complete! Use the deliver_project tool to fulfill the final delivery with the project result.', { silent: true });
   }
@@ -198,11 +186,8 @@ export class AgentBrain {
 
     if (!activeTeam) return;
 
-    // Check if we need manual approval
     if (activeTeam.outputAutoApprove === false) {
       core.setPendingOutputPrompt(prompt);
-
-      // Prepare default params based on output type
       const defaultParams: any = { model: activeTeam.outputModel };
       if (activeTeam.outputType === 'image') {
         defaultParams.aspectRatio = '16:9';
@@ -212,13 +197,11 @@ export class AgentBrain {
         defaultParams.aspectRatio = '16:9';
         defaultParams.durationSeconds = 4;
       }
-
       core.setPendingOutputParams(defaultParams);
       core.setReviewingOutput(true);
       return;
     }
 
-    // Standard auto-approve flow
     await this.processFinalAsset(prompt, { model: activeTeam.outputModel });
   }
 
@@ -235,8 +218,8 @@ export class AgentBrain {
 
     try {
       const llmConfig = useUiStore.getState().llmConfig;
-      if (!llmConfig.apiKey) throw new Error('Gemini API key is required');
-      const provider = new GeminiProvider(llmConfig.apiKey) as any;
+      if (!llmConfig.apiKey) throw new Error('OpenRouter API key is required');
+      const provider = new OpenRouterProvider(llmConfig.apiKey) as any;
       const model = options.model || activeTeam.outputModel || llmConfig.model;
 
       core.addLogEntry({
@@ -267,7 +250,6 @@ export class AgentBrain {
         assetContent = result.videoUrl || '';
         usage = result.usage;
       } else if (activeTeam.outputType === 'text') {
-        // For text, the prompt is the final output
         core.setFinalOutput(prompt);
         core.setPhase('done');
         core.setFinalOutputOpen(true);
