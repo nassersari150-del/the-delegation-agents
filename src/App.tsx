@@ -1,8 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useCoreStore } from './integration/store/coreStore';
 import { ActionLogPanel } from './interface/ActionLogPanel';
@@ -15,24 +10,19 @@ import SimulationView from './interface/SimulationView';
 import { VisualConfigurator } from './interface/VisualConfigurator/VisualConfigurator';
 import { SceneContext } from './simulation/SceneContext';
 import { SceneManager } from './simulation/SceneManager';
-
+import * as THREE from 'three/webgpu';
 
 const App: React.FC = () => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const managerRef = useRef<SceneManager | null>(null);
   const [sceneManager, setSceneManager] = useState<SceneManager | null>(null);
-  const { isLogOpen, isKanbanOpen, setIsResizing, viewMode, setViewMode } = useCoreStore();
+  const { isLogOpen, isKanbanOpen, setIsResizing, viewMode } = useCoreStore();
 
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [kanbanHeight, setKanbanHeight] = useState(220);
 
-  const startResizing = useCallback(() => {
-    setIsResizing(true);
-  }, [setIsResizing]);
-
-  const stopResizing = useCallback(() => {
-    setIsResizing(false);
-  }, [setIsResizing]);
+  const startResizing = useCallback(() => setIsResizing(true), [setIsResizing]);
+  const stopResizing = useCallback(() => setIsResizing(false), [setIsResizing]);
 
   const resize = useCallback((e: MouseEvent) => {
     if (useCoreStore.getState().isResizing) {
@@ -61,7 +51,6 @@ const App: React.FC = () => {
       managerRef.current = manager;
       setSceneManager(manager);
     }
-
     return () => {
       if (managerRef.current) {
         managerRef.current.dispose();
@@ -71,65 +60,17 @@ const App: React.FC = () => {
     };
   }, []);
 
-  return (
-    <SceneContext.Provider value={sceneManager}>
-      <div className="w-screen h-screen bg-white overflow-hidden flex flex-col">
-        {/* Top: Header */}
-        {!isFullscreen && <Header />}
+  // Écouter l'événement de téléportation
+  useEffect(() => {
+    const handleTeleport = (e: Event) => {
+      const { x, y, z } = (e as CustomEvent).detail;
+      const manager = managerRef.current;
+      if (!manager) return;
 
-        <div className="flex-1 flex flex-row min-h-0 min-w-0 overflow-hidden">
-          {/* Left: Log panel */}
-          {isLogOpen && !isFullscreen && viewMode !== 'design' && <ActionLogPanel />}
+      // Téléporte le joueur via le CharacterController
+      const controller = (manager as any).characterController;
+      if (!controller) return;
 
-          {/* Center: canvas + kanban drawer stacked */}
-          <div className="relative flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden bg-zinc-50">
-
-            {/* Simulation Context - Persistently Mounted */}
-            <div
-              className="flex-1 flex flex-col min-w-0 min-h-0"
-              style={{ visibility: viewMode === 'design' ? 'hidden' : 'visible' }}
-            >
-              <SimulationView canvasRef={canvasRef} isFullscreen={isFullscreen} setIsFullscreen={setIsFullscreen} />
-
-              {/* Resize Bar */}
-              {isKanbanOpen && !isFullscreen && (
-                <div
-                  className={`h-2 hover:h-2 bg-transparent hover:bg-zinc-200 border-t border-black/5 transition-colors cursor-row-resize z-30 flex items-center justify-center group shrink-0 ${useCoreStore.getState().isResizing ? 'bg-zinc-300' : ''}`}
-                  onMouseDown={startResizing}
-                >
-                  <div className="w-12 h-1 bg-zinc-300 rounded-full group-hover:bg-zinc-400" />
-                </div>
-              )}
-
-              {isKanbanOpen && !isFullscreen && <KanbanPanel height={kanbanHeight} />}
-            </div>
-          </div>
-
-          {/* Right: Inspector sidebar */}
-          {!isFullscreen && viewMode !== 'design' && <InspectorPanel />}
-        </div>
-
-        {/* Design Mode Overlay (Modal) */}
-        {viewMode === 'design' && (
-          <div
-            className="fixed inset-0 z-[60] flex items-center justify-center p-3 md:p-6 bg-white/40 backdrop-blur-xl"
-          >
-            <div
-              className="w-full h-full bg-white rounded-2xl shadow-2xl border border-zinc-200/50 overflow-hidden flex flex-col"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <VisualConfigurator />
-            </div>
-          </div>
-        )}
-
-        {/* Final output — fixed viewport overlay */}
-        <FinalOutputModal />
-        <OutputReviewModal />
-      </div>
-    </SceneContext.Provider>
-  );
-};
-
-export default App;
-
+      const playerIndex = 0; // Le joueur est toujours l'index 0
+      const target = new THREE.Vector3(x, y, z);
+      controller.characterManager.setPosition(playerIndex, target);
