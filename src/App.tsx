@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+    import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useCoreStore } from './integration/store/coreStore';
 import { ActionLogPanel } from './interface/ActionLogPanel';
 import { FinalOutputModal } from './interface/FinalOutputModal';
@@ -10,7 +10,6 @@ import SimulationView from './interface/SimulationView';
 import { VisualConfigurator } from './interface/VisualConfigurator/VisualConfigurator';
 import { SceneContext } from './simulation/SceneContext';
 import { SceneManager } from './simulation/SceneManager';
-import * as THREE from 'three/webgpu';
 
 const App: React.FC = () => {
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -60,22 +59,12 @@ const App: React.FC = () => {
     };
   }, []);
 
-  // Écouter l'événement de téléportation
   useEffect(() => {
     const handleTeleport = (e: Event) => {
       const { x, y, z } = (e as CustomEvent).detail;
       const manager = managerRef.current;
       if (!manager) return;
-
-      // Téléporte le joueur via le CharacterController
-      const controller = (manager as any).characterController;
-      if (!controller) return;
-
-      const playerIndex = 0; // Le joueur est toujours l'index 0
-      const target = new THREE.Vector3(x, y, z);
-      controller.characterManager.setPosition(playerIndex, target);
-      controller.characterManager.setPositionAndZeroVelocity(playerIndex, target);
-      controller.play(playerIndex, 'idle');
+      manager.teleportPlayer(x, y, z);
     };
 
     window.addEventListener('teleport-player', handleTeleport);
