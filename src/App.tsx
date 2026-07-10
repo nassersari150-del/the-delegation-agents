@@ -74,3 +74,65 @@ const App: React.FC = () => {
       const playerIndex = 0; // Le joueur est toujours l'index 0
       const target = new THREE.Vector3(x, y, z);
       controller.characterManager.setPosition(playerIndex, target);
+      controller.characterManager.setPositionAndZeroVelocity(playerIndex, target);
+      controller.play(playerIndex, 'idle');
+    };
+
+    window.addEventListener('teleport-player', handleTeleport);
+    return () => window.removeEventListener('teleport-player', handleTeleport);
+  }, []);
+
+  return (
+    <SceneContext.Provider value={sceneManager}>
+      <div className="w-screen h-screen bg-white overflow-hidden flex flex-col">
+        {!isFullscreen && <Header />}
+
+        <div className="flex-1 flex flex-row min-h-0 min-w-0 overflow-hidden">
+          {isLogOpen && !isFullscreen && viewMode !== 'design' && <ActionLogPanel />}
+
+          <div className="relative flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden bg-zinc-50">
+            <div
+              className="flex-1 flex flex-col min-w-0 min-h-0"
+              style={{ visibility: viewMode === 'design' ? 'hidden' : 'visible' }}
+            >
+              <SimulationView
+                canvasRef={canvasRef}
+                isFullscreen={isFullscreen}
+                setIsFullscreen={setIsFullscreen}
+              />
+
+              {isKanbanOpen && !isFullscreen && (
+                <div
+                  className={`h-2 hover:h-2 bg-transparent hover:bg-zinc-200 border-t border-black/5 transition-colors cursor-row-resize z-30 flex items-center justify-center group shrink-0 ${useCoreStore.getState().isResizing ? 'bg-zinc-300' : ''}`}
+                  onMouseDown={startResizing}
+                >
+                  <div className="w-12 h-1 bg-zinc-300 rounded-full group-hover:bg-zinc-400" />
+                </div>
+              )}
+
+              {isKanbanOpen && !isFullscreen && <KanbanPanel height={kanbanHeight} />}
+            </div>
+          </div>
+
+          {!isFullscreen && viewMode !== 'design' && <InspectorPanel />}
+        </div>
+
+        {viewMode === 'design' && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 md:p-6 bg-white/40 backdrop-blur-xl">
+            <div
+              className="w-full h-full bg-white rounded-2xl shadow-2xl border border-zinc-200/50 overflow-hidden flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <VisualConfigurator />
+            </div>
+          </div>
+        )}
+
+        <FinalOutputModal />
+        <OutputReviewModal />
+      </div>
+    </SceneContext.Provider>
+  );
+};
+
+export default App;
