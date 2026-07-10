@@ -3,7 +3,7 @@ import { DEFAULT_MODELS } from '../core/llm/constants';
 
 export const USER_ID = 'user';
 export const USER_NAME = 'Président';
-export const MAX_AGENTS = 999; // Pas de limite
+export const MAX_AGENTS = 999;
 export { USER_COLOR };
 export const DEFAULT_AGENTIC_SET_ID = 'vinted-ia';
 
@@ -58,6 +58,19 @@ PHASES DE RÉFLEXION OBLIGATOIRES avant chaque réponse :
 5. Data apprise
 `;
 
+// Index globaux uniques :
+// 0 = Président (joueur)
+// 1-5   = Vinted IA
+// 6-10  = Vente Site Web
+// 11-15 = Pub Marques
+// 16-20 = Formations IA
+// 21-25 = Miniatures Vidéo
+// 26-30 = Montage IA
+// 31-35 = Bot Trading
+// 36-40 = Agent Finance
+// 41-45 = JSON Business 1
+// 46-50 = JSON Business 2
+
 export const AGENTIC_SETS: AgenticSystem[] = [
   {
     id: 'vinted-ia',
@@ -73,48 +86,16 @@ export const AGENTIC_SETS: AgenticSystem[] = [
       id: 'vinted-chef-projet',
       index: 1,
       name: 'Chef de Projet',
-      description: CONSTITUTION + 'Tu es le Chef de Projet du business Vinted IA. Tu coordonnes l\'équipe, suis l\'avancement des niches, ventes et marges. Tu répartis les tâches et gères les priorités.',
+      description: CONSTITUTION + 'Tu es le Chef de Projet du business Vinted IA.',
       color: '#ec4899',
       model: DEFAULT_MODELS.text,
       humanInTheLoop: true,
       position: { x: 0, y: 130 },
       subagents: [
-        {
-          id: 'vinted-tech',
-          index: 2,
-          name: 'Pôle Tech',
-          description: CONSTITUTION + 'Tu gères le scraper Vinted sur Render, les workflows n8n, et les corrections de bugs. Tu surveilles les logs et proposes des améliorations techniques.',
-          color: '#3b82f6',
-          model: DEFAULT_MODELS.text,
-          position: { x: -400, y: 280 }
-        },
-        {
-          id: 'vinted-securite',
-          index: 3,
-          name: 'Pôle Sécurité',
-          description: CONSTITUTION + 'Tu surveilles les tentatives de ban Vinted, fais des audits réguliers, gères les accès et mots de passe, et alertes immédiatement si intrusion détectée.',
-          color: '#ef4444',
-          model: DEFAULT_MODELS.text,
-          position: { x: -150, y: 280 }
-        },
-        {
-          id: 'vinted-support',
-          index: 4,
-          name: 'Pôle Support',
-          description: CONSTITUTION + 'Tu gères tous les messages acheteurs et vendeurs Vinted. Tu traites les incidents, ouvres des tickets si besoin, et escalades vers le Gros Chef si bloqué.',
-          color: '#f97316',
-          model: DEFAULT_MODELS.text,
-          position: { x: 150, y: 280 }
-        },
-        {
-          id: 'vinted-data',
-          index: 5,
-          name: 'Pôle Data',
-          description: CONSTITUTION + 'Tu analyses les performances (ventes, marges, niches actives), protèges les données, fais des rapports hebdomadaires et cherches des améliorations sur le web.',
-          color: '#22c55e',
-          model: DEFAULT_MODELS.text,
-          position: { x: 400, y: 280 }
-        }
+        { id: 'vinted-tech',      index: 2, name: 'Pôle Tech',      description: CONSTITUTION + 'Tu gères le scraper Vinted sur Render et les workflows n8n.', color: '#3b82f6', model: DEFAULT_MODELS.text, position: { x: -400, y: 280 } },
+        { id: 'vinted-securite',  index: 3, name: 'Pôle Sécurité',  description: CONSTITUTION + 'Tu surveilles les tentatives de ban Vinted.', color: '#ef4444', model: DEFAULT_MODELS.text, position: { x: -150, y: 280 } },
+        { id: 'vinted-support',   index: 4, name: 'Pôle Support',   description: CONSTITUTION + 'Tu gères tous les messages acheteurs et vendeurs Vinted.', color: '#f97316', model: DEFAULT_MODELS.text, position: { x: 150, y: 280 } },
+        { id: 'vinted-data',      index: 5, name: 'Pôle Data',      description: CONSTITUTION + 'Tu analyses les performances ventes, marges, niches.', color: '#22c55e', model: DEFAULT_MODELS.text, position: { x: 400, y: 280 } },
       ]
     }
   },
@@ -122,7 +103,7 @@ export const AGENTIC_SETS: AgenticSystem[] = [
     id: 'vente-site-web',
     teamName: 'Vente Site Web',
     teamType: 'Agence Web',
-    teamDescription: 'Agence web automatisée. Prospection, vente et déploiement de sites. Cible 12k/mois.',
+    teamDescription: 'Agence web automatisée. Cible 12k/mois.',
     color: '#f97316',
     outputType: 'text',
     outputModel: DEFAULT_MODELS.text,
@@ -130,41 +111,18 @@ export const AGENTIC_SETS: AgenticSystem[] = [
     user: { index: 0, model: 'Président', position: { x: 0, y: 0 } },
     leadAgent: {
       id: 'web-chef-projet',
-      index: 1,
+      index: 6,
       name: 'Chef de Projet',
-      description: CONSTITUTION + 'Tu coordonnes l\'agence web automatisée. Tu gères la prospection via SerpApi, les emails Brevo, les conversations IA et le déploiement sur Vercel.',
+      description: CONSTITUTION + 'Tu coordonnes l\'agence web automatisée.',
       color: '#f97316',
       model: DEFAULT_MODELS.text,
       humanInTheLoop: true,
       position: { x: 0, y: 130 },
       subagents: [
-        {
-          id: 'web-tech',
-          index: 2,
-          name: 'Pôle Tech',
-          description: CONSTITUTION + 'Tu gères le code des sites web, les déploiements Vercel, et la maintenance technique de l\'agence automatisée.',
-          color: '#3b82f6',
-          model: DEFAULT_MODELS.text,
-          position: { x: -300, y: 280 }
-        },
-        {
-          id: 'web-securite',
-          index: 3,
-          name: 'Pôle Sécurité',
-          description: CONSTITUTION + 'Tu sécurises les accès clients, protèges les données et surveilles les systèmes de l\'agence.',
-          color: '#ef4444',
-          model: DEFAULT_MODELS.text,
-          position: { x: 0, y: 280 }
-        },
-        {
-          id: 'web-support',
-          index: 4,
-          name: 'Pôle Support',
-          description: CONSTITUTION + 'Tu gères les conversations avec les prospects et clients, traites les demandes et résous les problèmes.',
-          color: '#a855f7',
-          model: DEFAULT_MODELS.text,
-          position: { x: 300, y: 280 }
-        }
+        { id: 'web-tech',      index: 7,  name: 'Pôle Tech',     description: CONSTITUTION + 'Tu gères le code des sites web et déploiements Vercel.', color: '#3b82f6', model: DEFAULT_MODELS.text, position: { x: -300, y: 280 } },
+        { id: 'web-securite',  index: 8,  name: 'Pôle Sécurité', description: CONSTITUTION + 'Tu sécurises les accès clients.', color: '#ef4444', model: DEFAULT_MODELS.text, position: { x: 0, y: 280 } },
+        { id: 'web-support',   index: 9,  name: 'Pôle Support',  description: CONSTITUTION + 'Tu gères les conversations avec les prospects.', color: '#a855f7', model: DEFAULT_MODELS.text, position: { x: 300, y: 280 } },
+        { id: 'web-data',      index: 10, name: 'Pôle Data',     description: CONSTITUTION + 'Tu analyses les performances de l\'agence.', color: '#22c55e', model: DEFAULT_MODELS.text, position: { x: 600, y: 280 } },
       ]
     }
   },
@@ -172,7 +130,7 @@ export const AGENTIC_SETS: AgenticSystem[] = [
     id: 'pub-marques',
     teamName: 'Pub Marques',
     teamType: 'Publicité',
-    teamDescription: 'Vendre des publicités à des marques via des contenus automatisés. Cible 10k/mois.',
+    teamDescription: 'Vendre des publicités à des marques. Cible 10k/mois.',
     color: '#eab308',
     outputType: 'text',
     outputModel: DEFAULT_MODELS.text,
@@ -180,17 +138,18 @@ export const AGENTIC_SETS: AgenticSystem[] = [
     user: { index: 0, model: 'Président', position: { x: 0, y: 0 } },
     leadAgent: {
       id: 'pub-chef-projet',
-      index: 1,
+      index: 11,
       name: 'Chef de Projet',
-      description: CONSTITUTION + 'Tu coordonnes le business de publicité pour marques. Tu gères la prospection, la création de contenus sponsorisés et les relations avec les annonceurs.',
+      description: CONSTITUTION + 'Tu coordonnes le business de publicité pour marques.',
       color: '#eab308',
       model: DEFAULT_MODELS.text,
       humanInTheLoop: true,
       position: { x: 0, y: 130 },
       subagents: [
-        { id: 'pub-tech', index: 2, name: 'Pôle Tech', description: CONSTITUTION + 'Tu gères les outils de création de contenus publicitaires automatisés.', color: '#3b82f6', model: DEFAULT_MODELS.text, position: { x: -300, y: 280 } },
-        { id: 'pub-securite', index: 3, name: 'Pôle Sécurité', description: CONSTITUTION + 'Tu sécurises les comptes et données des partenaires marques.', color: '#ef4444', model: DEFAULT_MODELS.text, position: { x: 0, y: 280 } },
-        { id: 'pub-support', index: 4, name: 'Pôle Support', description: CONSTITUTION + 'Tu gères les relations avec les marques et traites leurs demandes.', color: '#a855f7', model: DEFAULT_MODELS.text, position: { x: 300, y: 280 } }
+        { id: 'pub-tech',     index: 12, name: 'Pôle Tech',     description: CONSTITUTION + 'Tu gères les outils de création de contenus publicitaires.', color: '#3b82f6', model: DEFAULT_MODELS.text, position: { x: -300, y: 280 } },
+        { id: 'pub-securite', index: 13, name: 'Pôle Sécurité', description: CONSTITUTION + 'Tu sécurises les comptes partenaires marques.', color: '#ef4444', model: DEFAULT_MODELS.text, position: { x: 0, y: 280 } },
+        { id: 'pub-support',  index: 14, name: 'Pôle Support',  description: CONSTITUTION + 'Tu gères les relations avec les marques.', color: '#a855f7', model: DEFAULT_MODELS.text, position: { x: 300, y: 280 } },
+        { id: 'pub-data',     index: 15, name: 'Pôle Data',     description: CONSTITUTION + 'Tu analyses les performances publicitaires.', color: '#22c55e', model: DEFAULT_MODELS.text, position: { x: 600, y: 280 } },
       ]
     }
   },
@@ -206,17 +165,18 @@ export const AGENTIC_SETS: AgenticSystem[] = [
     user: { index: 0, model: 'Président', position: { x: 0, y: 0 } },
     leadAgent: {
       id: 'formation-chef-projet',
-      index: 1,
+      index: 16,
       name: 'Chef de Projet',
-      description: CONSTITUTION + 'Tu coordonnes la création et vente de formations IA avec avatars. Tu gères le contenu pédagogique et la plateforme de vente.',
+      description: CONSTITUTION + 'Tu coordonnes la création et vente de formations IA.',
       color: '#22c55e',
       model: DEFAULT_MODELS.text,
       humanInTheLoop: true,
       position: { x: 0, y: 130 },
       subagents: [
-        { id: 'formation-tech', index: 2, name: 'Pôle Tech', description: CONSTITUTION + 'Tu gères la plateforme de formation et les avatars IA.', color: '#3b82f6', model: DEFAULT_MODELS.text, position: { x: -300, y: 280 } },
-        { id: 'formation-securite', index: 3, name: 'Pôle Sécurité', description: CONSTITUTION + 'Tu sécurises les accès étudiants et protèges les contenus.', color: '#ef4444', model: DEFAULT_MODELS.text, position: { x: 0, y: 280 } },
-        { id: 'formation-support', index: 4, name: 'Pôle Support', description: CONSTITUTION + 'Tu accompagnes les étudiants et gères leurs questions.', color: '#a855f7', model: DEFAULT_MODELS.text, position: { x: 300, y: 280 } }
+        { id: 'formation-tech',     index: 17, name: 'Pôle Tech',     description: CONSTITUTION + 'Tu gères la plateforme de formation et les avatars IA.', color: '#3b82f6', model: DEFAULT_MODELS.text, position: { x: -300, y: 280 } },
+        { id: 'formation-securite', index: 18, name: 'Pôle Sécurité', description: CONSTITUTION + 'Tu sécurises les accès étudiants.', color: '#ef4444', model: DEFAULT_MODELS.text, position: { x: 0, y: 280 } },
+        { id: 'formation-support',  index: 19, name: 'Pôle Support',  description: CONSTITUTION + 'Tu accompagnes les étudiants.', color: '#a855f7', model: DEFAULT_MODELS.text, position: { x: 300, y: 280 } },
+        { id: 'formation-data',     index: 20, name: 'Pôle Data',     description: CONSTITUTION + 'Tu analyses les performances des formations.', color: '#84cc16', model: DEFAULT_MODELS.text, position: { x: 600, y: 280 } },
       ]
     }
   },
@@ -232,17 +192,18 @@ export const AGENTIC_SETS: AgenticSystem[] = [
     user: { index: 0, model: 'Président', position: { x: 0, y: 0 } },
     leadAgent: {
       id: 'miniature-chef-projet',
-      index: 1,
+      index: 21,
       name: 'Chef de Projet',
-      description: CONSTITUTION + 'Tu coordonnes la création de miniatures YouTube. Tu gères les commandes clients et la production automatisée.',
+      description: CONSTITUTION + 'Tu coordonnes la création de miniatures YouTube.',
       color: '#3b82f6',
       model: DEFAULT_MODELS.text,
       humanInTheLoop: true,
       position: { x: 0, y: 130 },
       subagents: [
-        { id: 'miniature-tech', index: 2, name: 'Pôle Tech', description: CONSTITUTION + 'Tu gères les outils de génération d\'images et l\'automatisation.', color: '#06b6d4', model: DEFAULT_MODELS.text, position: { x: -300, y: 280 } },
-        { id: 'miniature-design', index: 3, name: 'Pôle Design', description: CONSTITUTION + 'Tu crées et valides les miniatures selon les besoins des YouTubers.', color: '#a855f7', model: DEFAULT_MODELS.text, position: { x: 0, y: 280 } },
-        { id: 'miniature-support', index: 4, name: 'Pôle Support', description: CONSTITUTION + 'Tu gères les commandes clients et leurs retours.', color: '#f97316', model: DEFAULT_MODELS.text, position: { x: 300, y: 280 } }
+        { id: 'miniature-tech',     index: 22, name: 'Pôle Tech',     description: CONSTITUTION + 'Tu gères les outils de génération d\'images.', color: '#06b6d4', model: DEFAULT_MODELS.text, position: { x: -300, y: 280 } },
+        { id: 'miniature-design',   index: 23, name: 'Pôle Design',   description: CONSTITUTION + 'Tu crées et valides les miniatures.', color: '#a855f7', model: DEFAULT_MODELS.text, position: { x: 0, y: 280 } },
+        { id: 'miniature-support',  index: 24, name: 'Pôle Support',  description: CONSTITUTION + 'Tu gères les commandes clients.', color: '#f97316', model: DEFAULT_MODELS.text, position: { x: 300, y: 280 } },
+        { id: 'miniature-data',     index: 25, name: 'Pôle Data',     description: CONSTITUTION + 'Tu analyses les performances des ventes de miniatures.', color: '#22c55e', model: DEFAULT_MODELS.text, position: { x: 600, y: 280 } },
       ]
     }
   },
@@ -258,17 +219,18 @@ export const AGENTIC_SETS: AgenticSystem[] = [
     user: { index: 0, model: 'Président', position: { x: 0, y: 0 } },
     leadAgent: {
       id: 'montage-chef-projet',
-      index: 1,
+      index: 26,
       name: 'Chef de Projet',
-      description: CONSTITUTION + 'Tu coordonnes le service de montage vidéo IA. Tu gères les commandes et la production automatisée.',
+      description: CONSTITUTION + 'Tu coordonnes le service de montage vidéo IA.',
       color: '#8b5cf6',
       model: DEFAULT_MODELS.text,
       humanInTheLoop: true,
       position: { x: 0, y: 130 },
       subagents: [
-        { id: 'montage-tech', index: 2, name: 'Pôle Tech', description: CONSTITUTION + 'Tu gères les outils de montage IA et l\'automatisation FFmpeg.', color: '#3b82f6', model: DEFAULT_MODELS.text, position: { x: -300, y: 280 } },
-        { id: 'montage-creation', index: 3, name: 'Pôle Création', description: CONSTITUTION + 'Tu supervises la qualité des montages produits.', color: '#ec4899', model: DEFAULT_MODELS.text, position: { x: 0, y: 280 } },
-        { id: 'montage-support', index: 4, name: 'Pôle Support', description: CONSTITUTION + 'Tu gères les clients et leurs demandes de montage.', color: '#f97316', model: DEFAULT_MODELS.text, position: { x: 300, y: 280 } }
+        { id: 'montage-tech',     index: 27, name: 'Pôle Tech',     description: CONSTITUTION + 'Tu gères les outils de montage IA et FFmpeg.', color: '#3b82f6', model: DEFAULT_MODELS.text, position: { x: -300, y: 280 } },
+        { id: 'montage-creation', index: 28, name: 'Pôle Création', description: CONSTITUTION + 'Tu supervises la qualité des montages.', color: '#ec4899', model: DEFAULT_MODELS.text, position: { x: 0, y: 280 } },
+        { id: 'montage-support',  index: 29, name: 'Pôle Support',  description: CONSTITUTION + 'Tu gères les clients et demandes de montage.', color: '#f97316', model: DEFAULT_MODELS.text, position: { x: 300, y: 280 } },
+        { id: 'montage-data',     index: 30, name: 'Pôle Data',     description: CONSTITUTION + 'Tu analyses les performances du service montage.', color: '#22c55e', model: DEFAULT_MODELS.text, position: { x: 600, y: 280 } },
       ]
     }
   },
@@ -284,17 +246,18 @@ export const AGENTIC_SETS: AgenticSystem[] = [
     user: { index: 0, model: 'Président', position: { x: 0, y: 0 } },
     leadAgent: {
       id: 'trading-chef-projet',
-      index: 1,
+      index: 31,
       name: 'Chef de Projet',
-      description: CONSTITUTION + 'Tu coordonnes le bot de trading. Tu surveilles les performances et alertes le Président si pertes dépassent le seuil fixé.',
+      description: CONSTITUTION + 'Tu coordonnes le bot de trading.',
       color: '#06b6d4',
       model: DEFAULT_MODELS.text,
       humanInTheLoop: true,
       position: { x: 0, y: 130 },
       subagents: [
-        { id: 'trading-tech', index: 2, name: 'Pôle Tech', description: CONSTITUTION + 'Tu développes et maintiens le bot de trading automatisé.', color: '#3b82f6', model: DEFAULT_MODELS.text, position: { x: -300, y: 280 } },
-        { id: 'trading-securite', index: 3, name: 'Pôle Sécurité', description: CONSTITUTION + 'Tu sécurises les accès aux comptes de trading et protèges les fonds.', color: '#ef4444', model: DEFAULT_MODELS.text, position: { x: 0, y: 280 } },
-        { id: 'trading-data', index: 4, name: 'Pôle Data', description: CONSTITUTION + 'Tu analyses les performances du bot et optimises les stratégies.', color: '#22c55e', model: DEFAULT_MODELS.text, position: { x: 300, y: 280 } }
+        { id: 'trading-tech',     index: 32, name: 'Pôle Tech',     description: CONSTITUTION + 'Tu développes et maintiens le bot de trading.', color: '#3b82f6', model: DEFAULT_MODELS.text, position: { x: -300, y: 280 } },
+        { id: 'trading-securite', index: 33, name: 'Pôle Sécurité', description: CONSTITUTION + 'Tu sécurises les accès aux comptes de trading.', color: '#ef4444', model: DEFAULT_MODELS.text, position: { x: 0, y: 280 } },
+        { id: 'trading-support',  index: 34, name: 'Pôle Support',  description: CONSTITUTION + 'Tu surveilles les performances du bot.', color: '#f97316', model: DEFAULT_MODELS.text, position: { x: 300, y: 280 } },
+        { id: 'trading-data',     index: 35, name: 'Pôle Data',     description: CONSTITUTION + 'Tu analyses les données de marché.', color: '#22c55e', model: DEFAULT_MODELS.text, position: { x: 600, y: 280 } },
       ]
     }
   },
@@ -302,7 +265,7 @@ export const AGENTIC_SETS: AgenticSystem[] = [
     id: 'agent-finance',
     teamName: 'Agent Finance',
     teamType: 'Finance Long Terme',
-    teamDescription: 'Agent qui gère les actifs avec data et autres. Long terme. Cible 10k/mois.',
+    teamDescription: 'Agent qui gère les actifs. Long terme. Cible 10k/mois.',
     color: '#f43f5e',
     outputType: 'text',
     outputModel: DEFAULT_MODELS.text,
@@ -310,17 +273,18 @@ export const AGENTIC_SETS: AgenticSystem[] = [
     user: { index: 0, model: 'Président', position: { x: 0, y: 0 } },
     leadAgent: {
       id: 'finance-chef-projet',
-      index: 1,
+      index: 36,
       name: 'Chef de Projet',
-      description: CONSTITUTION + 'Tu gères les actifs financiers à long terme du Président. Tu analyses les marchés, proposes des stratégies d\'investissement et surveilles le portefeuille.',
+      description: CONSTITUTION + 'Tu gères les actifs financiers à long terme.',
       color: '#f43f5e',
       model: DEFAULT_MODELS.text,
       humanInTheLoop: true,
       position: { x: 0, y: 130 },
       subagents: [
-        { id: 'finance-tech', index: 2, name: 'Pôle Tech', description: CONSTITUTION + 'Tu développes les outils d\'analyse financière automatisée.', color: '#3b82f6', model: DEFAULT_MODELS.text, position: { x: -300, y: 280 } },
-        { id: 'finance-data', index: 3, name: 'Pôle Data', description: CONSTITUTION + 'Tu analyses les données de marché et produis des rapports financiers.', color: '#22c55e', model: DEFAULT_MODELS.text, position: { x: 0, y: 280 } },
-        { id: 'finance-securite', index: 4, name: 'Pôle Sécurité', description: CONSTITUTION + 'Tu protèges les actifs et sécurises les comptes financiers.', color: '#ef4444', model: DEFAULT_MODELS.text, position: { x: 300, y: 280 } }
+        { id: 'finance-tech',     index: 37, name: 'Pôle Tech',     description: CONSTITUTION + 'Tu développes les outils d\'analyse financière.', color: '#3b82f6', model: DEFAULT_MODELS.text, position: { x: -300, y: 280 } },
+        { id: 'finance-data',     index: 38, name: 'Pôle Data',     description: CONSTITUTION + 'Tu analyses les données de marché et produis des rapports.', color: '#22c55e', model: DEFAULT_MODELS.text, position: { x: 0, y: 280 } },
+        { id: 'finance-securite', index: 39, name: 'Pôle Sécurité', description: CONSTITUTION + 'Tu protèges les actifs et comptes financiers.', color: '#ef4444', model: DEFAULT_MODELS.text, position: { x: 300, y: 280 } },
+        { id: 'finance-support',  index: 40, name: 'Pôle Support',  description: CONSTITUTION + 'Tu gères les relations avec les partenaires financiers.', color: '#a855f7', model: DEFAULT_MODELS.text, position: { x: 600, y: 280 } },
       ]
     }
   },
@@ -328,7 +292,7 @@ export const AGENTIC_SETS: AgenticSystem[] = [
     id: 'json-business-1',
     teamName: 'JSON Business 1',
     teamType: 'Dynamique',
-    teamDescription: 'Business dynamique à définir selon les opportunités du marché. Cible 800/mois.',
+    teamDescription: 'Business dynamique. Cible 800/mois.',
     color: '#84cc16',
     outputType: 'text',
     outputModel: DEFAULT_MODELS.text,
@@ -336,16 +300,18 @@ export const AGENTIC_SETS: AgenticSystem[] = [
     user: { index: 0, model: 'Président', position: { x: 0, y: 0 } },
     leadAgent: {
       id: 'json1-chef-projet',
-      index: 1,
+      index: 41,
       name: 'Chef de Projet',
-      description: CONSTITUTION + 'Tu gères ce business dynamique. Tu t\'adaptes aux opportunités du marché et proposes des stratégies au Président.',
+      description: CONSTITUTION + 'Tu gères ce business dynamique.',
       color: '#84cc16',
       model: DEFAULT_MODELS.text,
       humanInTheLoop: true,
       position: { x: 0, y: 130 },
       subagents: [
-        { id: 'json1-tech', index: 2, name: 'Pôle Tech', description: CONSTITUTION + 'Tu gères les aspects techniques de ce business dynamique.', color: '#3b82f6', model: DEFAULT_MODELS.text, position: { x: -200, y: 280 } },
-        { id: 'json1-support', index: 3, name: 'Pôle Support', description: CONSTITUTION + 'Tu gères les clients et partenaires de ce business.', color: '#f97316', model: DEFAULT_MODELS.text, position: { x: 200, y: 280 } }
+        { id: 'json1-tech',     index: 42, name: 'Pôle Tech',     description: CONSTITUTION + 'Tu gères les aspects techniques.', color: '#3b82f6', model: DEFAULT_MODELS.text, position: { x: -300, y: 280 } },
+        { id: 'json1-securite', index: 43, name: 'Pôle Sécurité', description: CONSTITUTION + 'Tu sécurises les systèmes.', color: '#ef4444', model: DEFAULT_MODELS.text, position: { x: 0, y: 280 } },
+        { id: 'json1-support',  index: 44, name: 'Pôle Support',  description: CONSTITUTION + 'Tu gères les clients.', color: '#f97316', model: DEFAULT_MODELS.text, position: { x: 300, y: 280 } },
+        { id: 'json1-data',     index: 45, name: 'Pôle Data',     description: CONSTITUTION + 'Tu analyses les performances.', color: '#22c55e', model: DEFAULT_MODELS.text, position: { x: 600, y: 280 } },
       ]
     }
   },
@@ -353,7 +319,7 @@ export const AGENTIC_SETS: AgenticSystem[] = [
     id: 'json-business-2',
     teamName: 'JSON Business 2',
     teamType: 'Dynamique',
-    teamDescription: 'Business dynamique à définir selon les opportunités du marché. Cible 800/mois.',
+    teamDescription: 'Business dynamique. Cible 800/mois.',
     color: '#a78bfa',
     outputType: 'text',
     outputModel: DEFAULT_MODELS.text,
@@ -361,19 +327,21 @@ export const AGENTIC_SETS: AgenticSystem[] = [
     user: { index: 0, model: 'Président', position: { x: 0, y: 0 } },
     leadAgent: {
       id: 'json2-chef-projet',
-      index: 1,
+      index: 46,
       name: 'Chef de Projet',
-      description: CONSTITUTION + 'Tu gères ce business dynamique. Tu t\'adaptes aux opportunités du marché et proposes des stratégies au Président.',
+      description: CONSTITUTION + 'Tu gères ce business dynamique.',
       color: '#a78bfa',
       model: DEFAULT_MODELS.text,
       humanInTheLoop: true,
       position: { x: 0, y: 130 },
       subagents: [
-        { id: 'json2-tech', index: 2, name: 'Pôle Tech', description: CONSTITUTION + 'Tu gères les aspects techniques de ce business dynamique.', color: '#3b82f6', model: DEFAULT_MODELS.text, position: { x: -200, y: 280 } },
-        { id: 'json2-support', index: 3, name: 'Pôle Support', description: CONSTITUTION + 'Tu gères les clients et partenaires de ce business.', color: '#f97316', model: DEFAULT_MODELS.text, position: { x: 200, y: 280 } }
+        { id: 'json2-tech',     index: 47, name: 'Pôle Tech',     description: CONSTITUTION + 'Tu gères les aspects techniques.', color: '#3b82f6', model: DEFAULT_MODELS.text, position: { x: -300, y: 280 } },
+        { id: 'json2-securite', index: 48, name: 'Pôle Sécurité', description: CONSTITUTION + 'Tu sécurises les systèmes.', color: '#ef4444', model: DEFAULT_MODELS.text, position: { x: 0, y: 280 } },
+        { id: 'json2-support',  index: 49, name: 'Pôle Support',  description: CONSTITUTION + 'Tu gères les clients.', color: '#f97316', model: DEFAULT_MODELS.text, position: { x: 300, y: 280 } },
+        { id: 'json2-data',     index: 50, name: 'Pôle Data',     description: CONSTITUTION + 'Tu analyses les performances.', color: '#22c55e', model: DEFAULT_MODELS.text, position: { x: 600, y: 280 } },
       ]
     }
-  }
+  },
 ];
 
 export function getAgentSet(id: string, customSystems: AgenticSystem[] = []): AgenticSystem {
@@ -388,11 +356,21 @@ export function getAllAgents(system: AgenticSystem): AgentNode[] {
   const agents: AgentNode[] = [];
   const traverse = (node: AgentNode) => {
     agents.push(node);
-    if (node.subagents) {
-      node.subagents.forEach(traverse);
-    }
+    if (node.subagents) node.subagents.forEach(traverse);
   };
   traverse(system.leadAgent);
+  return agents;
+}
+
+export function getAllAgentsFromAllSystems(): AgentNode[] {
+  const agents: AgentNode[] = [];
+  AGENTIC_SETS.forEach(system => {
+    const traverse = (node: AgentNode) => {
+      agents.push(node);
+      if (node.subagents) node.subagents.forEach(traverse);
+    };
+    traverse(system.leadAgent);
+  });
   return agents;
 }
 
@@ -406,4 +384,4 @@ export function getAllCharacters(system: AgenticSystem): AgentNode[] {
     description: 'Président Fondateur de la République IA.',
   };
   return [userNode, ...getAllAgents(system)];
-      }
+}
