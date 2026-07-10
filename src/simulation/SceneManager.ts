@@ -368,6 +368,15 @@ export class SceneManager {
     }
   }
 
+  public teleportPlayer(x: number, y: number, z: number): void {
+  if (!this.controller) return;
+  const set = getActiveAgentSet();
+  const playerIndex = set.user.index;
+  const target = new THREE.Vector3(x, y, z);
+  this.controller.characterManager.setPositionAndZeroVelocity(playerIndex, target);
+  this.controller.play(playerIndex, 'idle');
+  }
+  
   public resetScene() {
     if (!this.controller) return;
     useUiStore.getState().setChatting(false);
